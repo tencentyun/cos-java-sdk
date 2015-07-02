@@ -4,7 +4,7 @@ java sdk for [腾讯云对象存储服务](http://wiki.qcloud.com/wiki/COS%E4%BA
 ## 安装（直接下载源码集成）
 
 ### 直接下载源码集成
-从github下载源码装入到您的程序中，并加载include.php
+从github下载源码装入到您的程序中
 调用请参考示例
 
 ## 修改配置

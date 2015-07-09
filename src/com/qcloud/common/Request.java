@@ -95,10 +95,11 @@ public class Request
 						//分片上传
 						DataInputStream ins = new DataInputStream(new FileInputStream(file));
 						ins.skip(offset);
-                    	byte[] bufferOut = new byte[sliceSize];
-                    	ins.read(bufferOut);
-                    	ContentBody contentBody =  new ByteArrayBody(bufferOut, file.getName());//new ByteArrayBody(bytes, fileName);
-                    	multipartEntity.addPart("fileContent", contentBody);
+						int len = (int)(offset + sliceSize > file.length() ? file.length() - offset : sliceSize);
+                    				byte[] bufferOut = new byte[len];
+                    				ins.read(bufferOut);
+                    				ContentBody contentBody =  new ByteArrayBody(bufferOut, file.getName());//new ByteArrayBody(bytes, fileName);
+                    				multipartEntity.addPart("fileContent", contentBody);
 					}
 				}
 				httpPost.setEntity(multipartEntity);

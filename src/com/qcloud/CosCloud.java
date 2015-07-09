@@ -53,7 +53,7 @@ public class CosCloud {
 	 * @return
 	 */
 	public String updateFile(String bucketName, String folderPath, String fileName, String bizAttribute){
-		String url = COSAPI_CGI_URL + m_appid + "/" + bucketName + folderPath + (fileName != null ? fileName : "");
+		String url = COSAPI_CGI_URL + m_appid + "/" + bucketName + folderPath + (fileName != null ? URLEncoder.encode(fileName) : "");
 		String fileId = "/"  + m_appid + "/" + bucketName + folderPath + (fileName != null ? fileName : "");
 		HashMap<String, Object> data = new HashMap<String, Object>();
 		data.put("op", "update");
@@ -83,7 +83,7 @@ public class CosCloud {
 	 * @return
 	 */
 	public String deleteFile(String bucketName, String folderPath, String fileName){
-		String url = COSAPI_CGI_URL + m_appid + "/" + bucketName + folderPath + (fileName != null ? fileName : "");
+		String url = COSAPI_CGI_URL + m_appid + "/" + bucketName + folderPath + (fileName != null ? URLEncoder.encode(fileName) : "");
 		String fileId = "/"  + m_appid + "/" + bucketName + folderPath + (fileName != null ? fileName : "");
 		HashMap<String, Object> data = new HashMap<String, Object>();
 		data.put("op", "delete");
@@ -111,7 +111,7 @@ public class CosCloud {
 	 * @return
 	 */
 	public String getFileStat(String bucketName, String folderPath, String fileName){
-		String url = COSAPI_CGI_URL + m_appid + "/" + bucketName + folderPath + (fileName != null ? fileName : "");
+		String url = COSAPI_CGI_URL + m_appid + "/" + bucketName + folderPath + (fileName != null ? URLEncoder.encode(fileName) : "");
 		HashMap<String, Object> data = new HashMap<String, Object>();
 		data.put("op", "stat");
 		long expired = System.currentTimeMillis() / 1000 + 2592000;

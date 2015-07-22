@@ -1,4 +1,4 @@
-package com.qcloud.sign;
+package com.qcloud.cosapi.common;
 
 
 public class Base64Util {

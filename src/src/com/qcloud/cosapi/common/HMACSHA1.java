@@ -1,4 +1,4 @@
-package com.qcloud.sign;
+package com.qcloud.cosapi.common;
 
 import java.io.File;
 import java.io.FileInputStream;

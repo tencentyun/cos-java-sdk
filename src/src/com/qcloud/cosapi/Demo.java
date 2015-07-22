@@ -1,17 +1,3 @@
-# tencentyun-cos-java-sdk
-java sdk for [腾讯云对象存储服务](http://wiki.qcloud.com/wiki/COS%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D)
-
-## 安装（直接下载源码集成）
-
-### 直接下载源码集成
-从github下载源码装入到您的程序中
-调用请参考示例
-
-## 修改配置
-修改Demo.java内的appid等信息为您的配置
-
-## 上传、查询、删除程序示例
-```java
 package com.qcloud.cosapi;
 import com.qcloud.cosapi.api.*;
 
@@ -36,7 +22,7 @@ public class Demo {
             //result = cos.getFolderStat(bucketName, "/sdk/");
             //result = cos.deleteFile(bucketName, "/sdk/xx.txt");
             //result = cos.deleteFolder(bucketName, "/sdk/");
-            result = cos.sliceUploadFile(bucketName, "/红警II共和国之辉(简体中文版).rar", "F:\\红警II共和国之辉(简体中文版).rar", 512 * 1024);
+            result = cos.sliceUploadFileFirstStep(bucketName, "/红警II共和国之辉(简体中文版).rar", "F:\\红警II共和国之辉(简体中文版).rar", 512 * 1024);
             long end = System.currentTimeMillis();
             System.out.println(result);
             System.out.println("总用时：" + (end - start) + "毫秒");
@@ -47,5 +33,3 @@ public class Demo {
 		}
 	}
 }
-
-```

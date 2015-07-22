@@ -1,8 +1,8 @@
-package com.qcloud.sign;
+package com.qcloud.cosapi.common;
 
 import java.util.Random;
 
-public class FileCloudSign {
+public class Sign {
 
 	/**
 	    app_sign    时效性签名
@@ -58,7 +58,8 @@ public class FileCloudSign {
     	return appSignature(appId, secretId, secretKey, expired, "", bucketName);
     }
     
-    public static String appSignatureOnce(int appId, String secretId, String secretKey, String fileId, String bucketName){
+    public static String appSignatureOnce(int appId, String secretId, String secretKey, String remotePath, String bucketName){
+    	String fileId = "/"  + appId + "/" + bucketName + remotePath; 
     	return appSignature(appId, secretId, secretKey, 0, fileId, bucketName);
     }
     

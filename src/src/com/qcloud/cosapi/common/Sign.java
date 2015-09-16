@@ -124,12 +124,7 @@ public class Sign {
 	}
 
 	private static int getFileidFromUrl(String url, StringBuffer fileid) {
-		
-		 /*
-        http://1.1.1.1/1009_eb090aa932f04fbfb4cb29be8dcc264e.f20.mp4
-        http://1.1.1.1/77/123456/c06dd409-20bd-4a0a-84e4-e6c45fc5fb25/orignal
-        */
-        if (url.startsWith("http://"))
+		if (url.startsWith("http://"))
         {
             url = url.substring(7);
             String[] url_explode = url.split("/");

@@ -1,6 +1,9 @@
 package com.qcloud.cosapi.api;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.HashMap;
 
@@ -144,6 +147,9 @@ public class CosCloud {
 	 * @throws Exception 
 	 */
 	public String deleteFile(String bucketName, String remotePath) throws Exception{
+		if(remotePath.equals("/")){
+			throw new Exception("can not delete bucket using aip! go to http://console.qcloud.com/cos to operate bucket");
+		}
 		String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
 		HashMap<String, Object> data = new HashMap<String, Object>();
 		data.put("op", "delete");
@@ -276,6 +282,30 @@ public class CosCloud {
 	}
 	
 	/**
+	 * 流单个文件上传
+	 * @param bucketName bucket名称
+	 * @param remotePath 远程文件路径
+	 * @param inputStream 文件流
+	 * @return
+	 * @throws Exception
+	 */
+	public String uploadFile(String bucketName, String remotePath, InputStream inputStream) throws Exception{		
+		try {			
+			String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
+			int length = inputStream.available();
+			HashMap<String, Object> data = new HashMap<String, Object>();
+			data.put("op", "upload");
+			long expired = System.currentTimeMillis() / 1000 + 60;
+			String sign = Sign.appSignature(appId, secretId, secretKey, expired, bucketName);
+			HashMap<String, String> header = new HashMap<String, String>();
+			header.put("Authorization", sign);
+			return Request.uploadFileByStream(url, data, header, timeOut, inputStream, length);	
+		} catch (Exception e) {
+			throw e;
+		}
+	}
+	
+	/**
 	 * 分片上传第一步
 	 * @param bucketName bucket名称
 	 * @param remotePath 远程文件路径
@@ -288,6 +318,7 @@ public class CosCloud {
 		try{
 			String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
 			String sha1 = HMACSHA1.getFileSha1(localPath);
+			System.out.println(sha1);
 			long fileSize = new File(localPath).length();
 			HashMap<String, Object> data = new HashMap<String, Object>();
 			data.put("op", "upload_slice");
@@ -316,13 +347,13 @@ public class CosCloud {
 	 * @throws Exception 
 	 */
 	public String sliceUploadFileFollowStep(String bucketName, String remotePath, String localPath,
-			String sessionId, int offset, int sliceSize) throws Exception{
+			String sessionId, long offset, int sliceSize) throws Exception{
 		String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
 		HashMap<String, Object> data = new HashMap<String, Object>();
 		data.put("op", "upload_slice");
 		data.put("session", sessionId);
 		data.put("offset", offset);
-		long expired = System.currentTimeMillis() / 1000 + 60;
+		long expired = System.currentTimeMillis() / 1000 + (60 * 60 * 24);
 		String sign = Sign.appSignature(appId, secretId, secretKey, expired, bucketName);
 		HashMap<String, String> header = new HashMap<String, String>();
 		header.put("Authorization", sign);
@@ -367,9 +398,10 @@ public class CosCloud {
 			else{
 				String sessionId = data.getString("session");
 				sliceSize = data.getInt("slice_size"); 
-				int offset = data.getInt("offset");
+				long offset = data.getLong("offset");
 				int retryCount = 0;
 				while(true){
+					System.out.println("offset : " + offset);
 					result = sliceUploadFileFollowStep(bucketName, remotePath, localPath, sessionId, offset, sliceSize);
 					System.out.println(result);
 					jsonObject = new JSONObject(result);
@@ -387,7 +419,7 @@ public class CosCloud {
 					else{
 						data = jsonObject.getJSONObject("data");
 						if(data.has("offset")){
-							offset = data.getInt("offset") + sliceSize;
+							offset = data.getLong("offset") + sliceSize;
 						}
 						else{
 							break;

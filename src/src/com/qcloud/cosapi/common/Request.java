@@ -3,6 +3,7 @@ package com.qcloud.cosapi.common;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.Map;
 
@@ -37,8 +38,41 @@ public class Request
 		return sendRequest(url, data, requestMethod, header, timeOut, localPath, -1, 0);
 	}
 	
+	public static String uploadFileByStream(String url, Map<String, Object> data, Map<String, String> header, int timeOut, InputStream inputStream, int length) throws Exception{
+		HttpClient httpClient = new DefaultHttpClient();
+		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, timeOut); 
+		try {
+			HttpPost httpPost = new  HttpPost(url);
+			httpPost.setHeader("accept", "*/*");
+			httpPost.setHeader("connection", "Keep-Alive");
+			httpPost.setHeader("user-agent", "qcloud-java-sdk");
+			if(header != null){
+            	for(String key : header.keySet()){
+            		httpPost.setHeader(key, header.get(key));
+            	}
+            }
+			MultipartEntity multipartEntity = new MultipartEntity();
+			if(data != null){
+				for(String key : data.keySet()){
+					multipartEntity.addPart(key, new StringBody(data.get(key).toString()));
+				}
+			}
+			byte[] bufferOut = new byte[length];
+//			fileStream.skip(-length);
+			inputStream.read(bufferOut, 0, length);
+			ContentBody contentBody =  new ByteArrayBody(bufferOut, url.substring(url.lastIndexOf('/') + 1));
+			multipartEntity.addPart("fileContent", contentBody);
+			httpPost.setEntity(multipartEntity);
+			HttpResponse httpResponse = httpClient.execute(httpPost);
+			inputStream.close();
+			return EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+		} catch (Exception e) {
+			throw e;
+		}
+	}
+	
 	@SuppressWarnings({ "deprecation", "resource" })
-	public static String sendRequest(String url, Map<String, Object> data, String requestMethod, Map<String, String> header, int timeOut, String localPath, int offset, int sliceSize) throws Exception{
+	public static String sendRequest(String url, Map<String, Object> data, String requestMethod, Map<String, String> header, int timeOut, String localPath, long offset, int sliceSize) throws Exception{
 		HttpClient httpClient = new DefaultHttpClient();
 		httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, timeOut); 
 		if(requestMethod.equals("GET")){
@@ -65,7 +99,7 @@ public class Request
 	            	}
 	            }
 				HttpResponse httpResponse = httpClient.execute(httpGet);
-				return EntityUtils.toString(httpResponse.getEntity());
+				return EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
 			} catch (Exception e) {
 				throw e;
 			}
@@ -118,7 +152,7 @@ public class Request
 					httpPost.setEntity(multipartEntity);
 				}
 				HttpResponse httpResponse = httpClient.execute(httpPost);
-				return EntityUtils.toString(httpResponse.getEntity());
+				return EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
 			} catch (Exception e) {
 				throw e;
 			}

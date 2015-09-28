@@ -215,15 +215,15 @@ public class CosCloud {
 	 * @param bucketName bucket名称
 	 * @param remotePath 远程文件夹路径
 	 * @param num 拉取的总数
-	 * @param offset 透传字段,用于翻页,前端不需理解,需要往前/往后翻页则透传回来 
+	 * @param context 透传字段，查看第一页，则传空字符串。若需要翻页，需要将前一页返回值中的context透传到参数中。order用于指定翻页顺序。若order填0，则从当前页正序/往下翻页；若order填1，则从当前页倒序/往上翻页。
 	 * @param order 默认正序(=0), 填1为反序
 	 * @param pattern 拉取模式:只是文件，只是文件夹，全部
 	 * @return
 	 * @throws Exception 
 	 */
-	public String getFolderList(String bucketName, String remotePath, int num, String offset, int order, FolderPattern pattern) throws Exception{
+	public String getFolderList(String bucketName, String remotePath, int num, String context, int order, FolderPattern pattern) throws Exception{
 		remotePath = standardizationRemotePath(remotePath);
-		return getFolderList(bucketName, remotePath, "", num, offset, order, pattern);
+		return getFolderList(bucketName, remotePath, "", num, context, order, pattern);
 	}
 	
 	/**
@@ -232,19 +232,19 @@ public class CosCloud {
 	 * @param remotePath 远程文件夹路径
 	 * @param prefix 读取文件/文件夹前缀
 	 * @param num 拉取的总数
-	 * @param offset 透传字段,用于翻页,前端不需理解,需要往前/往后翻页则透传回来 
+	 * @param context 透传字段，查看第一页，则传空字符串。若需要翻页，需要将前一页返回值中的context透传到参数中。order用于指定翻页顺序。若order填0，则从当前页正序/往下翻页；若order填1，则从当前页倒序/往上翻页。
 	 * @param order 默认正序(=0), 填1为反序
 	 * @param pattern 拉取模式:只是文件，只是文件夹，全部
 	 * @return
 	 * @throws Exception 
 	 */
-	public String getFolderList(String bucketName, String remotePath, String prefix, int num, String offset, int order, FolderPattern pattern) throws Exception{
+	public String getFolderList(String bucketName, String remotePath, String prefix, int num, String context, int order, FolderPattern pattern) throws Exception{
 		remotePath = standardizationRemotePath(remotePath);
 		String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath) + URLEncoder.encode(prefix);
 		HashMap<String, Object> data = new HashMap<String, Object>();
 		data.put("op", "list");
 		data.put("num", num);
-		data.put("offset", offset);
+		data.put("context", context);
 		data.put("order", order);
 		String[] patternArray = {"eListFileOnly", "eListDirOnly", "eListBoth"};
 		data.put("pattern", patternArray[pattern.ordinal()]);

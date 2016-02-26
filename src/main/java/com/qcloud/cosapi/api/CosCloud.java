@@ -10,16 +10,15 @@ import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.HashMap;
 
-public class CosCloud {
+public class CosCloud implements CosCloudApi {
     /**
      * @brief Cos类
      * @author robinslsun
      */
-    final String COSAPI_CGI_URL = "http://web.file.myqcloud.com/files/v1/";
+    private static final String COSAPI_CGI_URL = "http://web.file.myqcloud.com/files/v1/";
 
     public enum FolderPattern {File, Folder, Both}
 
-    ;
     private int appId;
     private String secretId;
     private String secretKey;
@@ -92,29 +91,13 @@ public class CosCloud {
         return remotePath;
     }
 
-    /**
-     * 更新文件夹信息
-     *
-     * @param bucketName   bucket名称
-     * @param remotePath   远程文件夹路径
-     * @param bizAttribute 更新信息
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String updateFolder(String bucketName, String remotePath, String bizAttribute) throws Exception {
         remotePath = standardizationRemotePath(remotePath);
         return updateFile(bucketName, remotePath, bizAttribute);
     }
 
-    /**
-     * 更新文件信息
-     *
-     * @param bucketName   bucket名称
-     * @param remotePath   远程文件路径
-     * @param bizAttribute 更新信息
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String updateFile(String bucketName, String remotePath, String bizAttribute) throws Exception {
         String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
         HashMap<String, Object> data = new HashMap<String, Object>();
@@ -128,27 +111,13 @@ public class CosCloud {
         return Request.sendRequest(url, data, "POST", header, timeOut);
     }
 
-    /**
-     * 删除文件夹
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件夹路径
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String deleteFolder(String bucketName, String remotePath) throws Exception {
         remotePath = standardizationRemotePath(remotePath);
         return deleteFile(bucketName, remotePath);
     }
 
-    /**
-     * 删除文件
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件路径
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String deleteFile(String bucketName, String remotePath) throws Exception {
         if (remotePath.equals("/")) {
             throw new Exception("can not delete bucket using aip! go to http://console.qcloud.com/cos to operate bucket");
@@ -163,27 +132,13 @@ public class CosCloud {
         return Request.sendRequest(url, data, "POST", header, timeOut);
     }
 
-    /**
-     * 获取文件夹信息
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件夹路径
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String getFolderStat(String bucketName, String remotePath) throws Exception {
         remotePath = standardizationRemotePath(remotePath);
         return getFileStat(bucketName, remotePath);
     }
 
-    /**
-     * 获取文件信息
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件路径
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String getFileStat(String bucketName, String remotePath) throws Exception {
         String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
         HashMap<String, Object> data = new HashMap<String, Object>();
@@ -195,14 +150,7 @@ public class CosCloud {
         return Request.sendRequest(url, data, "GET", header, timeOut);
     }
 
-    /**
-     * 创建文件夹
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件夹路径
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String createFolder(String bucketName, String remotePath) throws Exception {
         remotePath = standardizationRemotePath(remotePath);
         String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
@@ -216,36 +164,13 @@ public class CosCloud {
         return Request.sendRequest(url, data, "POST", header, timeOut);
     }
 
-    /**
-     * 目录列表
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件夹路径
-     * @param num        拉取的总数
-     * @param context    透传字段，查看第一页，则传空字符串。若需要翻页，需要将前一页返回值中的context透传到参数中。order用于指定翻页顺序。若order填0，则从当前页正序/往下翻页；若order填1，则从当前页倒序/往上翻页。
-     * @param order      默认正序(=0), 填1为反序
-     * @param pattern    拉取模式:只是文件，只是文件夹，全部
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String getFolderList(String bucketName, String remotePath, int num, String context, int order, FolderPattern pattern) throws Exception {
         remotePath = standardizationRemotePath(remotePath);
         return getFolderList(bucketName, remotePath, "", num, context, order, pattern);
     }
 
-    /**
-     * 目录列表,前缀搜索
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件夹路径
-     * @param prefix     读取文件/文件夹前缀
-     * @param num        拉取的总数
-     * @param context    透传字段，查看第一页，则传空字符串。若需要翻页，需要将前一页返回值中的context透传到参数中。order用于指定翻页顺序。若order填0，则从当前页正序/往下翻页；若order填1，则从当前页倒序/往上翻页。
-     * @param order      默认正序(=0), 填1为反序
-     * @param pattern    拉取模式:只是文件，只是文件夹，全部
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String getFolderList(String bucketName, String remotePath, String prefix, int num, String context, int order, FolderPattern pattern) throws Exception {
         remotePath = standardizationRemotePath(remotePath);
         String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath) + URLEncoder.encode(prefix);
@@ -263,15 +188,7 @@ public class CosCloud {
         return Request.sendRequest(url, data, "GET", header, timeOut);
     }
 
-    /**
-     * 单个文件上传
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件路径
-     * @param localPath  本地文件路径
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String uploadFile(String bucketName, String remotePath, String localPath) throws Exception {
 
         try {
@@ -290,15 +207,7 @@ public class CosCloud {
         }
     }
 
-    /**
-     * 流单个文件上传
-     *
-     * @param bucketName  bucket名称
-     * @param remotePath  远程文件路径
-     * @param inputStream 文件流
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String uploadFile(String bucketName, String remotePath, InputStream inputStream) throws Exception {
         try {
             String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
@@ -315,16 +224,7 @@ public class CosCloud {
         }
     }
 
-    /**
-     * 分片上传第一步
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件路径
-     * @param localPath  本地文件路径
-     * @param sliceSize  切片大小（字节）
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String sliceUploadFileFirstStep(String bucketName, String remotePath, String localPath, int sliceSize) throws Exception {
         try {
             String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
@@ -346,18 +246,7 @@ public class CosCloud {
         }
     }
 
-    /**
-     * 分片上传后续步骤
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件路径
-     * @param localPath  本地文件路径
-     * @param sessionId  分片上传会话ID
-     * @param offset     文件分片偏移量
-     * @param sliceSize  切片大小（字节）
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String sliceUploadFileFollowStep(String bucketName, String remotePath, String localPath,
                                             String sessionId, long offset, int sliceSize) throws Exception {
         String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
@@ -372,29 +261,12 @@ public class CosCloud {
         return Request.sendRequest(url, data, "POST", header, timeOut, localPath, offset, sliceSize);
     }
 
-    /**
-     * 分片上传，默认切片大小为512K
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件路径
-     * @param localPath  本地文件路径
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String sliceUploadFile(String bucketName, String remotePath, String localPath) throws Exception {
         return sliceUploadFile(bucketName, remotePath, localPath, 512 * 1024);
     }
 
-    /**
-     * 分片上传
-     *
-     * @param bucketName bucket名称
-     * @param remotePath 远程文件路径
-     * @param localPath  本地文件路径
-     * @param sliceSize  切片大小（字节）
-     * @return
-     * @throws Exception
-     */
+    @Override
     public String sliceUploadFile(String bucketName, String remotePath, String localPath, int sliceSize) throws Exception {
         String result = sliceUploadFileFirstStep(bucketName, remotePath, localPath, sliceSize);
         try {

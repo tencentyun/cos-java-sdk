@@ -1,27 +1,19 @@
 package com.qcloud.cosapi;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import com.qcloud.cosapi.api.*;
-import com.qcloud.cosapi.common.Sign;
-import com.sun.org.apache.bcel.internal.classfile.Field;
+import com.qcloud.cosapi.api.CosCloud;
 
 public class Demo {
-	//通过控制台获取AppId,SecretId,SecretKey
-	public static final int APP_ID = 1000000;
-	public static final String SECRET_ID = "SECRET_ID";
-	public static final String SECRET_KEY = "SECRET_KEY";
+    //通过控制台获取AppId,SecretId,SecretKey
+    public static final int APP_ID = 1000000;
+    public static final String SECRET_ID = "SECRET_ID";
+    public static final String SECRET_KEY = "SECRET_KEY";
 
-	public static void main(String[] args) {
-		//分片上传大文件时，应把CosCloud构造方法第4个超时时间参数设置得长些，默认为60秒
-		CosCloud cos = new CosCloud(APP_ID, SECRET_ID, SECRET_KEY);
-		try{			
-			String result = "";
-			String bucketName = "111";
+    public static void main(String[] args) {
+        //分片上传大文件时，应把CosCloud构造方法第4个超时时间参数设置得长些，默认为60秒
+        CosCloud cos = new CosCloud(APP_ID, SECRET_ID, SECRET_KEY);
+        try {
+            String result = "";
+            String bucketName = "111";
             long start = System.currentTimeMillis();
             result = cos.getFolderList(bucketName, "/", 20, "", 0, CosCloud.FolderPattern.Both);
 //            result = cos.createFolder(bucketName, "/sdk/");
@@ -46,10 +38,9 @@ public class Demo {
             long end = System.currentTimeMillis();
             System.out.println(result);
             System.out.println("总用时：" + (end - start) + "毫秒");
-			System.out.println("The End!");
-		}
-		catch(Exception e){
-			System.out.println(e.getMessage());
-		}
-	}
+            System.out.println("The End!");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }

@@ -4,6 +4,8 @@ import com.qcloud.cosapi.common.HMACSHA1;
 import com.qcloud.cosapi.common.Request;
 import com.qcloud.cosapi.common.Sign;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
@@ -16,6 +18,8 @@ public class CosCloud implements CosCloudApi {
      * @author robinslsun
      */
     private static final String COSAPI_CGI_URL = "http://web.file.myqcloud.com/files/v1/";
+
+    private static final Logger LG = LoggerFactory.getLogger(CosCloud.class);
 
     public enum FolderPattern {File, Folder, Both}
 
@@ -229,7 +233,7 @@ public class CosCloud implements CosCloudApi {
         try {
             String url = COSAPI_CGI_URL + appId + "/" + bucketName + encodeRemotePath(remotePath);
             String sha1 = HMACSHA1.getFileSha1(localPath);
-            System.out.println(sha1);
+            LG.info(sha1);
             long fileSize = new File(localPath).length();
             HashMap<String, Object> data = new HashMap<String, Object>();
             data.put("op", "upload_slice");
@@ -278,7 +282,7 @@ public class CosCloud implements CosCloudApi {
             JSONObject data = jsonObject.getJSONObject("data");
             if (data.has("access_url")) {
                 String accessUrl = data.getString("access_url");
-                System.out.println("命中秒传：" + accessUrl);
+                LG.info("命中秒传：" + accessUrl);
                 return result;
             } else {
                 String sessionId = data.getString("session");
@@ -286,16 +290,16 @@ public class CosCloud implements CosCloudApi {
                 long offset = data.getLong("offset");
                 int retryCount = 0;
                 while (true) {
-                    System.out.println("offset : " + offset);
+                    LG.info("offset : " + offset);
                     result = sliceUploadFileFollowStep(bucketName, remotePath, localPath, sessionId, offset, sliceSize);
-                    System.out.println(result);
+                    LG.info(result);
                     jsonObject = new JSONObject(result);
                     code = jsonObject.getInt("code");
                     if (code != 0) {
                         //当上传失败后会重试3次
                         if (retryCount < 3) {
                             retryCount++;
-                            System.out.println("重试....");
+                            LG.info("重试....");
                         } else {
                             return result;
                         }

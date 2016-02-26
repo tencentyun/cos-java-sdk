@@ -61,16 +61,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <distributionManagement>
-        <repository>
-            <id>internal</id>
-            <url>http://maven.oa.com/nexus/content/repositories/thirdparty</url>
-        </repository>
-        <snapshotRepository>
-            <id>internal</id>
-            <url>http://maven.oa.com/nexus/content/repositories/thirdparty-snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
-
 </project>

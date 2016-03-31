@@ -44,14 +44,14 @@ public class CommonCodecUtils {
 
     /**
     * 获取文件的SHA1
-    * @param binaryData  文件的二进制数据
+    * @param fileContent  文件的二进制数据
     * @return  文件对应的SHA1值
     */
     public static String getFileSha1(byte[] fileContent) {
         String sha1Digest = DigestUtils.sha1Hex(fileContent);
         return sha1Digest;
     }
-    
+
     /**
      * 获取文件的SHA1
      * @param fileInputStream  文件的输入流

@@ -126,7 +126,7 @@ public class FileProcessTest {
         try {
             inputStream = FileProcess.getFileInputStream(EmptyFilePath);
             byte[] fileContent = FileProcess.getFileContent(inputStream, 0, 10);
-            assertNull(fileContent);
+            assertThat(fileContent.length, equalTo(0));
         } catch (Exception e) {
             fail();
         } finally {

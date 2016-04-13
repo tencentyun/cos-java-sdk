@@ -119,8 +119,8 @@ public class FileProcess {
      */
     public static byte[] getFileContent(InputStream inputStream, long offset, int length)
             throws Exception {
-        if (offset < 0 || length <= 0) {
-            return null;
+        if (offset < 0 || length < 0) {
+            throw new Exception("get file content param error");
         }
 
         byte[] fileContent = null;
@@ -129,7 +129,8 @@ public class FileProcess {
         inputStream.skip(offset);
         int readLen = inputStream.read(tempBuf);
         if (readLen < 0) {
-            return null;
+            fileContent = new byte[0];
+            return fileContent;
         }
         if (readLen < length) {
             fileContent = new byte[readLen];

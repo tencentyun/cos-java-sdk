@@ -38,14 +38,19 @@ public class HttpSender {
     private static final int DEFAULT_MAX_ROUTE_CONNECTION = 500;
     // Http客户端
     private static HttpClient cosHttpClient = initHttpClient();
-
+    // 监控空闲线程
+    private static IdleConnectionMonitorThread idleMonitor;
+    
     private static final Logger LOG = LoggerFactory.getLogger(HttpSender.class);
+    
 
     private static HttpClient initHttpClient() {
         PoolingHttpClientConnectionManager connectionManager =
                 new PoolingHttpClientConnectionManager();
         connectionManager.setMaxTotal(DEFAULT_MAX_TOTAL_CONNECTION);
         connectionManager.setDefaultMaxPerRoute(DEFAULT_MAX_ROUTE_CONNECTION);
+        idleMonitor = new IdleConnectionMonitorThread(connectionManager);
+        idleMonitor.start();
         return HttpClients.custom().setConnectionManager(connectionManager).build();
     }
 

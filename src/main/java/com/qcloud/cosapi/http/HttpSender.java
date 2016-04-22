@@ -260,5 +260,10 @@ public class HttpSender {
             }
         }
     }
+    
+    // 关闭后台扫描线程
+    public static void shutdown() {
+        idleMonitor.shutdown();
+    }
 
 }

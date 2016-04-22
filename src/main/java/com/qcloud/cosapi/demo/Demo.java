@@ -42,7 +42,7 @@ public class Demo {
             // 初始化cos
             CosCloud cos = new CosCloud(APP_ID, SECRET_ID, SECRET_KEY, 60);
             String result = null;
-
+                        
             // 先获取bucketName下的成员，应该为空
             // 注意getFolderList获得的是目录的子成员信息
             result = cos.getFolderList(bucketName, "/", DIR_NUM, "", 0,
@@ -102,6 +102,10 @@ public class Demo {
             result = cos.getFolderList(bucketName, "/", DIR_NUM, "", 0,
                     CosCloud.FolderPattern.Both);
             System.out.println("getFolderList result: " + result);
+            
+            // 关闭释放资源
+            cos.shutdown();
+            System.out.println("shutdown!");
         } catch (Exception e) {
             e.printStackTrace();
         }

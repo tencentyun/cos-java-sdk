@@ -727,6 +727,12 @@ public class CosCloud {
         // 如果重传多次仍然失败，则返回最后一次的结果
         return resultJson;
     }
+    
+    // 关闭后台线程,关闭后不可复用，必须重新生成CosCloud对象
+    public void shutdown() {
+        executorService.shutdown();
+        HttpSender.shutdown();
+    }
 
     /**
      * 返回签名失效的时间，默认为半个小时

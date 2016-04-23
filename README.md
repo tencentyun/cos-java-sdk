@@ -1,4 +1,7 @@
 # tencentyun-cos-java-sdk
+
+* Master: [![Build Status](https://travis-ci.org/magicxie/cos-java-sdk.svg)](https://travis-ci.org/magicxie/cos-java-sdk)
+
 java sdk for [腾讯云对象存储服务](http://wiki.qcloud.com/wiki/COS%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D)
 
 

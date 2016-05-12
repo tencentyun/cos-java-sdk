@@ -58,11 +58,13 @@ public class CosCloud {
     // 用来执行并行重传的线程池的大小
     private static final int THREAD_POOL_SIZE = 20;
     // 线程池对象
-    private static final ExecutorService executorService =
+    private final ExecutorService executorService =
         Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
     // 主线程等待子线程执行并发发送的最长时间, 单位为秒
     private static final int MAX_WAIT_TIME_PARALL_SEND_FILE = 1800;
+    
+    private HttpSender httpSender = null;
 
     // 文件类型
     public enum FolderPattern {
@@ -87,6 +89,7 @@ public class CosCloud {
         this.secretId = secretId;
         this.secretKey = secretKey;
         this.timeOut = timeOut;
+        this.httpSender = new HttpSender();
     }
 
     /**
@@ -219,7 +222,7 @@ public class CosCloud {
         httpHeader.put(RequestHeaderKey.Authorization, sign);
         httpHeader.put(RequestHeaderKey.Content_TYPE, RequestHeaderValue.ContentType.JSON);
 
-        return HttpSender.sendJsonRequest(url, httpHeader, updateData, timeOut);
+        return httpSender.sendJsonRequest(url, httpHeader, updateData, timeOut);
     }
 
     /**
@@ -261,7 +264,7 @@ public class CosCloud {
         httpHeader.put(RequestHeaderKey.Authorization, sign);
         httpHeader.put(RequestHeaderKey.Content_TYPE, RequestHeaderValue.ContentType.JSON);
 
-        return HttpSender.sendJsonRequest(url, httpHeader, postBody, timeOut);
+        return httpSender.sendJsonRequest(url, httpHeader, postBody, timeOut);
     }
 
     /**
@@ -294,7 +297,7 @@ public class CosCloud {
 
         HashMap<String, String> httpHeader = new HashMap<>();
         httpHeader.put(RequestHeaderKey.Authorization, sign);
-        return HttpSender.sendGetRequest(url, httpHeader, getBody, timeOut);
+        return httpSender.sendGetRequest(url, httpHeader, getBody, timeOut);
     }
 
 
@@ -328,7 +331,7 @@ public class CosCloud {
         HashMap<String, String> httpHeader = new HashMap<>();
         httpHeader.put(RequestHeaderKey.Authorization, sign);
         httpHeader.put(RequestHeaderKey.Content_TYPE, RequestHeaderValue.ContentType.JSON);
-        return HttpSender.sendJsonRequest(url, httpHeader, postBody, timeOut);
+        return httpSender.sendJsonRequest(url, httpHeader, postBody, timeOut);
     }
 
     /**
@@ -404,7 +407,7 @@ public class CosCloud {
 
         HashMap<String, String> httpHeader = new HashMap<>();
         httpHeader.put(RequestHeaderKey.Authorization, sign);
-        return HttpSender.sendGetRequest(url, httpHeader, getBody, timeOut);
+        return httpSender.sendGetRequest(url, httpHeader, getBody, timeOut);
     }
 
     /**
@@ -462,7 +465,7 @@ public class CosCloud {
         HashMap<String, String> httpHeader = new HashMap<>();
         httpHeader.put(RequestHeaderKey.Authorization, sign);
 
-        return HttpSender.sendFileRequest(url, httpHeader, postData, fileContent, timeOut);
+        return httpSender.sendFileRequest(url, httpHeader, postData, fileContent, timeOut);
     }
 
     /**
@@ -632,7 +635,7 @@ public class CosCloud {
         HashMap<String, String> header = new HashMap<>();
         header.put(RequestHeaderKey.Authorization, sign);
 
-        String resultStr = HttpSender.sendFileRequest(url, header, postBody, null, timeOut);
+        String resultStr = httpSender.sendFileRequest(url, header, postBody, null, timeOut);
         try {
             JSONObject resultJson = new JSONObject(resultStr);
             return resultJson;
@@ -711,7 +714,7 @@ public class CosCloud {
         String resultStr = null;
         JSONObject resultJson = null;
         while (retryCount < SLICE_UPLOAD_RETRY_COUNT) {
-            resultStr = HttpSender.sendFileRequest(url, header, postBody, sliceContent, timeOut);
+            resultStr = httpSender.sendFileRequest(url, header, postBody, sliceContent, timeOut);
             try {
                 resultJson = new JSONObject(resultStr);
                 if (resultJson.getInt(ResponseBodyKey.CODE) == 0) {
@@ -731,7 +734,7 @@ public class CosCloud {
     // 关闭后台线程,关闭后不可复用，必须重新生成CosCloud对象
     public void shutdown() {
         executorService.shutdown();
-        HttpSender.shutdown();
+        httpSender.shutdown();
     }
 
     /**

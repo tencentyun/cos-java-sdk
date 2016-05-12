@@ -19,6 +19,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.execchain.RetryExec;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
@@ -36,15 +37,20 @@ public class HttpSender {
     private static final int DEFAULT_MAX_TOTAL_CONNECTION = 500;
     // 每一个路由关联的最大连接数
     private static final int DEFAULT_MAX_ROUTE_CONNECTION = 500;
+    // 默认发生错误时,retry的
+    private static final int DEFAULT_MAX_RETRY_COUNT = 3;
     // Http客户端
-    private static HttpClient cosHttpClient = initHttpClient();
+    private HttpClient cosHttpClient = null;
     // 监控空闲线程
-    private static IdleConnectionMonitorThread idleMonitor;
-    
-    private static final Logger LOG = LoggerFactory.getLogger(HttpSender.class);
-    
+    private IdleConnectionMonitorThread idleMonitor;
 
-    private static HttpClient initHttpClient() {
+    private static final Logger LOG = LoggerFactory.getLogger(HttpSender.class);
+
+    public HttpSender() {
+        this.cosHttpClient = initHttpClient();
+    }
+
+    private HttpClient initHttpClient() {
         PoolingHttpClientConnectionManager connectionManager =
                 new PoolingHttpClientConnectionManager();
         connectionManager.setMaxTotal(DEFAULT_MAX_TOTAL_CONNECTION);
@@ -55,13 +61,20 @@ public class HttpSender {
     }
 
     // 打印HTTP返回码非200的时候的错误信息
-    private static String getErrorHttpResponseMsg(String methondName, String url,
-            StatusLine responseStatus) {
-        String errMsg = new StringBuilder(methondName).append(" to url:").append(url)
-                .append(" get error response, protocol:")
-                .append(responseStatus.getProtocolVersion().toString()).append(", code:")
-                .append(responseStatus.getStatusCode()).append(", reason:")
-                .append(responseStatus.getReasonPhrase()).toString();
+    private String getErrorHttpResponseMsg(String methondName,
+                                           String url,
+                                           StatusLine responseStatus) {
+        String errMsg =
+                new StringBuilder(methondName).append(" to url:")
+                                              .append(url)
+                                              .append(" get error response, protocol:")
+                                              .append(responseStatus.getProtocolVersion()
+                                                                    .toString())
+                                              .append(", code:")
+                                              .append(responseStatus.getStatusCode())
+                                              .append(", reason:")
+                                              .append(responseStatus.getReasonPhrase())
+                                              .toString();
         return errMsg;
     }
 
@@ -75,49 +88,60 @@ public class HttpSender {
      * @return Cos服务器返回的字符串
      * @throws Exception
      */
-    public static String sendGetRequest(String url, Map<String, String> headers,
-            Map<String, String> params, int timeout) throws Exception {
+    public String sendGetRequest(String url,
+                                 Map<String, String> headers,
+                                 Map<String, String> params,
+                                 int timeout) throws Exception {
 
-        HttpGet httpGet = null;
-        try {
-            URIBuilder urlBuilder = new URIBuilder(url);
-            if (params != null) {
-                for (String paramKey : params.keySet()) {
-                    urlBuilder.addParameter(paramKey, params.get(paramKey));
+        int retry = 0;
+        String responseStr = "";
+        while (retry < DEFAULT_MAX_RETRY_COUNT) {
+            HttpGet httpGet = null;
+            try {
+                URIBuilder urlBuilder = new URIBuilder(url);
+                if (params != null) {
+                    for (String paramKey : params.keySet()) {
+                        urlBuilder.addParameter(paramKey, params.get(paramKey));
+                    }
                 }
+
+                httpGet = new HttpGet(urlBuilder.build());
+            } catch (URISyntaxException e) {
+                LOG.error("Invalid url: {}", url);
+                throw e;
             }
 
-            httpGet = new HttpGet(urlBuilder.build());
-        } catch (URISyntaxException e) {
-            LOG.error("Invalid url: {}", url);
-            throw e;
-        }
+            setTimeout(httpGet, timeout);
+            setHeaders(httpGet, headers);
 
-        setTimeout(httpGet, timeout);
-        setHeaders(httpGet, headers);
-
-        String responseStr = null;
-        try {
-            HttpResponse httpResponse = cosHttpClient.execute(httpGet);;
-            int statusCode = httpResponse.getStatusLine().getStatusCode();
-            if (statusCode == 200 || statusCode == 400) {
-                responseStr = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
-            } else {
-                String errMsg = getErrorHttpResponseMsg("sendGetRequest", url, httpResponse.getStatusLine());
-                LOG.error(errMsg);
-                JSONObject errorRet = new JSONObject();
-                errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
-                errorRet.put(ResponseBodyKey.MESSAGE, errMsg);
-                return errorRet.toString();
+            try {
+                HttpResponse httpResponse = cosHttpClient.execute(httpGet);;
+                int statusCode = httpResponse.getStatusLine().getStatusCode();
+                if (statusCode == 200 || statusCode == 400) {
+                    responseStr = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+                    return responseStr;
+                } else {
+                    String errMsg = getErrorHttpResponseMsg("sendGetRequest",
+                                                            url,
+                                                            httpResponse.getStatusLine());
+                    LOG.error(errMsg);
+                    JSONObject errorRet = new JSONObject();
+                    errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
+                    errorRet.put(ResponseBodyKey.MESSAGE, errMsg);
+                    return errorRet.toString();
+                }
+            } catch (ParseException | IOException e) {
+                ++retry;
+                if (retry == DEFAULT_MAX_RETRY_COUNT) {
+                    LOG.error("Send Get Request occur a error: {}", e.toString());
+                    JSONObject errorRet = new JSONObject();
+                    errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
+                    errorRet.put(ResponseBodyKey.MESSAGE, e.toString());
+                    responseStr = errorRet.toString();                    
+                } 
+            } finally {
+                httpGet.releaseConnection();
             }
-        } catch (ParseException | IOException e) {
-            LOG.error("Send Get Request occur a error: {}", e.toString());
-            JSONObject errorRet = new JSONObject();
-            errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
-            errorRet.put(ResponseBodyKey.MESSAGE, e.toString());
-            responseStr = errorRet.toString();
-        } finally {
-            httpGet.releaseConnection();
         }
         return responseStr;
 
@@ -133,41 +157,53 @@ public class HttpSender {
      * @return 服务器端返回的HTTP应答
      * @throws Exception
      */
-    public static String sendJsonRequest(String url, Map<String, String> headers,
-            Map<String, String> params, int timeout) throws Exception {
-        HttpPost httpPost = new HttpPost(url);
+    public String sendJsonRequest(String url,
+                                  Map<String, String> headers,
+                                  Map<String, String> params,
+                                  int timeout) throws Exception {
 
-        setTimeout(httpPost, timeout);
-        setHeaders(httpPost, headers);
+        int retry = 0;
+        String responseStr = "";
+        while (retry < DEFAULT_MAX_RETRY_COUNT) {
+            HttpPost httpPost = new HttpPost(url);
 
-        ContentType utf8TextPlain =
-                org.apache.http.entity.ContentType.create("text/plain", Consts.UTF_8);
-        String postJsonStr = new JSONObject(params).toString();
-        StringEntity stringEntity = new StringEntity(postJsonStr, utf8TextPlain);
-        httpPost.setEntity(stringEntity);
+            setTimeout(httpPost, timeout);
+            setHeaders(httpPost, headers);
 
-        String responseStr = null;
-        try {
-            HttpResponse httpResponse = cosHttpClient.execute(httpPost);
-            int statusCode = httpResponse.getStatusLine().getStatusCode();
-            if (statusCode == 200 || statusCode == 400) {
-                responseStr = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
-            } else {
-                String errMsg = getErrorHttpResponseMsg("sendJsonRequest", url, httpResponse.getStatusLine());
-                LOG.error(errMsg);
-                JSONObject errorRet = new JSONObject();
-                errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
-                errorRet.put(ResponseBodyKey.MESSAGE, errMsg);
-                return errorRet.toString();
+            ContentType utf8TextPlain =
+                    org.apache.http.entity.ContentType.create("text/plain", Consts.UTF_8);
+            String postJsonStr = new JSONObject(params).toString();
+            StringEntity stringEntity = new StringEntity(postJsonStr, utf8TextPlain);
+            httpPost.setEntity(stringEntity);
+
+            try {
+                HttpResponse httpResponse = cosHttpClient.execute(httpPost);
+                int statusCode = httpResponse.getStatusLine().getStatusCode();
+                if (statusCode == 200 || statusCode == 400) {
+                    responseStr = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+                    return responseStr;
+                } else {
+                    String errMsg = getErrorHttpResponseMsg("sendJsonRequest",
+                                                            url,
+                                                            httpResponse.getStatusLine());
+                    LOG.error(errMsg);
+                    JSONObject errorRet = new JSONObject();
+                    errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
+                    errorRet.put(ResponseBodyKey.MESSAGE, errMsg);
+                    return errorRet.toString();
+                }
+            } catch (ParseException | IOException e) {
+                ++retry;
+                if (retry == DEFAULT_MAX_RETRY_COUNT) {
+                    LOG.error("sendJsonRequest occur a error: {}", e.toString());
+                    JSONObject errorRet = new JSONObject();
+                    errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
+                    errorRet.put(ResponseBodyKey.MESSAGE, e.toString());
+                    responseStr = errorRet.toString();                    
+                }
+            } finally {
+                httpPost.releaseConnection();
             }
-        } catch (ParseException | IOException e) {
-            LOG.error("sendJsonRequest occur a error: {}", e.toString());
-            JSONObject errorRet = new JSONObject();
-            errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
-            errorRet.put(ResponseBodyKey.MESSAGE, e.toString());
-            responseStr = errorRet.toString();
-        } finally {
-            httpPost.releaseConnection();
         }
         return responseStr;
 
@@ -184,49 +220,61 @@ public class HttpSender {
      * @return Cos服务器端返回的Http应答
      * @throws Exception
      */
-    public static String sendFileRequest(String url, Map<String, String> headers,
-            Map<String, String> params, byte[] fileContent, int timeout) throws Exception {
-        HttpPost httpPost = new HttpPost(url);
+    public String sendFileRequest(String url,
+                                  Map<String, String> headers,
+                                  Map<String, String> params,
+                                  byte[] fileContent,
+                                  int timeout) throws Exception {
+        int retry = 0;
+        String responseStr = "";
+        while (retry < DEFAULT_MAX_RETRY_COUNT) {
+            HttpPost httpPost = new HttpPost(url);
 
-        setTimeout(httpPost, timeout);
-        setHeaders(httpPost, headers);
+            setTimeout(httpPost, timeout);
+            setHeaders(httpPost, headers);
 
-        MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
-        if (fileContent != null) {
-            entityBuilder.addBinaryBody(RequestBodyKey.FILE_CONTENT, fileContent);
-        }
-
-        ContentType utf8TextPlain =
-                org.apache.http.entity.ContentType.create("text/plain", Consts.UTF_8);
-        if (params != null) {
-            for (String paramKey : params.keySet()) {
-                entityBuilder.addTextBody(paramKey, params.get(paramKey), utf8TextPlain);
+            MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+            if (fileContent != null) {
+                entityBuilder.addBinaryBody(RequestBodyKey.FILE_CONTENT, fileContent);
             }
-        }
 
-        httpPost.setEntity(entityBuilder.build());
-        String responseStr = null;
-        try {
-            HttpResponse httpResponse = cosHttpClient.execute(httpPost);
-            int statusCode = httpResponse.getStatusLine().getStatusCode();
-            if (statusCode == 200 || statusCode == 400) {
-                responseStr = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
-            } else {
-                String errMsg = getErrorHttpResponseMsg("sendFileRequest", url, httpResponse.getStatusLine());
-                LOG.error(errMsg);
-                JSONObject errorRet = new JSONObject();
-                errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
-                errorRet.put(ResponseBodyKey.MESSAGE, errMsg);
-                return errorRet.toString();
+            ContentType utf8TextPlain =
+                    org.apache.http.entity.ContentType.create("text/plain", Consts.UTF_8);
+            if (params != null) {
+                for (String paramKey : params.keySet()) {
+                    entityBuilder.addTextBody(paramKey, params.get(paramKey), utf8TextPlain);
+                }
             }
-        } catch (ParseException | IOException e) {
-            LOG.error("SendFileRequest occur a error: {}", e.toString());
-            JSONObject errorRet = new JSONObject();
-            errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
-            errorRet.put(ResponseBodyKey.MESSAGE, e.toString());
-            responseStr = errorRet.toString();
-        } finally {
-            httpPost.releaseConnection();
+
+            httpPost.setEntity(entityBuilder.build());
+            try {
+                HttpResponse httpResponse = cosHttpClient.execute(httpPost);
+                int statusCode = httpResponse.getStatusLine().getStatusCode();
+                if (statusCode == 200 || statusCode == 400) {
+                    responseStr = EntityUtils.toString(httpResponse.getEntity(), "UTF-8");
+                    return responseStr;
+                } else {
+                    String errMsg = getErrorHttpResponseMsg("sendFileRequest",
+                                                            url,
+                                                            httpResponse.getStatusLine());
+                    LOG.error(errMsg);
+                    JSONObject errorRet = new JSONObject();
+                    errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
+                    errorRet.put(ResponseBodyKey.MESSAGE, errMsg);
+                    return errorRet.toString();
+                }
+            } catch (ParseException | IOException e) {
+                ++retry;
+                if (retry == DEFAULT_MAX_RETRY_COUNT) {
+                    LOG.error("sendFileRequest occur a error: {}", e.toString());
+                    JSONObject errorRet = new JSONObject();
+                    errorRet.put(ResponseBodyKey.CODE, ErrorCode.NETWORK_ERROR);
+                    errorRet.put(ResponseBodyKey.MESSAGE, e.toString());
+                    responseStr = errorRet.toString();                    
+                }
+            } finally {
+                httpPost.releaseConnection();
+            }
         }
         return responseStr;
     }
@@ -237,9 +285,11 @@ public class HttpSender {
      * @param httpRequest http请求
      * @param timeout Socket与连接超时时间，单位为秒
      */
-    private static void setTimeout(HttpRequestBase httpRequest, int timeout) {
-        RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(timeout * 1000)
-                .setConnectTimeout(timeout * 1000).build();
+    private void setTimeout(HttpRequestBase httpRequest, int timeout) {
+        RequestConfig requestConfig = RequestConfig.custom()
+                                                   .setSocketTimeout(timeout * 1000)
+                                                   .setConnectTimeout(timeout * 1000)
+                                                   .build();
         httpRequest.setConfig(requestConfig);
     }
 
@@ -249,7 +299,7 @@ public class HttpSender {
      * @param message HTTP消息
      * @param headers 用户额外添加的HTTP头部
      */
-    private static void setHeaders(HttpMessage message, Map<String, String> headers) {
+    private void setHeaders(HttpMessage message, Map<String, String> headers) {
         message.setHeader(RequestHeaderKey.ACCEPT, RequestHeaderValue.Accept.ALL);
         message.setHeader(RequestHeaderKey.CONNECTION, RequestHeaderValue.Connection.KEEP_ALIVE);;
         message.setHeader(RequestHeaderKey.USER_AGENT, RequestHeaderValue.UserAgent.COS_FLAG);
@@ -260,9 +310,9 @@ public class HttpSender {
             }
         }
     }
-    
+
     // 关闭后台扫描线程
-    public static void shutdown() {
+    public void shutdown() {
         idleMonitor.shutdown();
     }
 

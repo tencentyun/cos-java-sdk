@@ -10,12 +10,6 @@
 	<description>qcloud cos sdk for tencentyun</description>
 	<url>https://github.com/tencentyun/cos-java-sdk</url>
 
-	<parent>
-		<groupId>org.sonatype.oss</groupId>
-		<artifactId>oss-parent</artifactId>
-		<version>7</version>
-	</parent>
-
 	<licenses>
 		<license>
 			<name>cos-java-sdk</name>

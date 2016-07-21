@@ -1,22 +1,23 @@
 # tencentyun-cos-java-sdk
 
-* Master: [![Build Status](https://travis-ci.org/magicxie/cos-java-sdk.svg)](https://travis-ci.org/magicxie/cos-java-sdk)
+java sdk for [腾讯云对象存储服务](https://www.qcloud.com/product/cos.html)
 
-java sdk for [腾讯云对象存储服务](http://wiki.qcloud.com/wiki/COS%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D)
+sdk说明请参照[cos java sdk文档](https://www.qcloud.com/doc/product/227/3387)
 
 
 ## maven坐标
 
-    <groupId>com.qcloud</groupId>
-    <artifactId>cos_api</artifactId>
-    <version>3.1</version>
+```xml
+<groupId>com.qcloud</groupId>
+<artifactId>cos_api</artifactId>
+<version>3.3</version>
+```
 
 ### 直接下载源码集成
 从github下载源码装入到您的程序中
-调用请参考示例
+请参考示例Demo.java
 
-## 修改配置
-修改Demo.java内的appId, secretId, secretKey等信息为您的配置
-(可在控制台上查阅相关信息)
+## 使用范例
+修改Demo.java内的appId, secretId, secretKey等信息为您的配置(可在控制台上查阅相关信息), 然后运行Demo.java。
 
 

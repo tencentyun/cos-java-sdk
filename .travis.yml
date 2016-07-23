@@ -1,2 +1,0 @@
-language: java
-install: mvn install -Dgpg.skip -DskipTests=true -Dmaven.javadoc.skip=true -B -V

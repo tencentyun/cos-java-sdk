@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.qcloud</groupId>
 	<artifactId>cos_api</artifactId>
-	<version>3.3</version>
+	<version>3.7</version>
 	<packaging>jar</packaging>
 	<name>cos-java-sdk</name>
 	<description>Tencent qcloud cos java sdk</description>
@@ -157,26 +157,5 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<profiles>
-		<profile>
-			<id>doclint-java8-disable</id>
-			<activation>
-				<jdk>[1.8,)</jdk>
-			</activation>
-
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-javadoc-plugin</artifactId>
-						<configuration>
-							<additionalparam>-Xdoclint:none</additionalparam>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 
 </project>

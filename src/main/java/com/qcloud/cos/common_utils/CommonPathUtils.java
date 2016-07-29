@@ -18,9 +18,9 @@ public class CommonPathUtils {
 		String[] pathSegmentsArr = urlPath.split(PATH_DELIMITER);
 
 		for (String pathSegment : pathSegmentsArr) {
-			if (!pathSegment.trim().isEmpty()) {
+			if (!pathSegment.isEmpty()) {
 				try {
-					pathBuilder.append(PATH_DELIMITER).append(URLEncoder.encode(pathSegment.trim(), "UTF-8"));
+					pathBuilder.append(PATH_DELIMITER).append(URLEncoder.encode(pathSegment, "UTF-8").replace("+", "%20"));
 				} catch (UnsupportedEncodingException e) {
 					String errMsg = "Unsupported ecnode exception:" + e.toString();
 					LOG.error(errMsg);

@@ -67,6 +67,7 @@ public class Demo {
 		updateFileRequest.setCacheControl("no cache");
 		updateFileRequest.setContentDisposition("cos_sample.txt");
 		updateFileRequest.setContentLanguage("english");
+		updateFileRequest.setContentEncoding("gzip");
 		updateFileRequest.setContentType("application/json");
 		updateFileRequest.setXCosMeta("x-cos-meta-xxx", "xxx");
 		updateFileRequest.setXCosMeta("x-cos-meta-yyy", "yyy");

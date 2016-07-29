@@ -200,7 +200,6 @@ public class DefaultCosHttpClient extends AbstractCosHttpClient {
 	private void setHeaders(HttpMessage message, Map<String, String> headers) {
 		message.setHeader(RequestHeaderKey.ACCEPT, RequestHeaderValue.Accept.ALL);
 		message.setHeader(RequestHeaderKey.CONNECTION, RequestHeaderValue.Connection.KEEP_ALIVE);
-		;
 		message.setHeader(RequestHeaderKey.USER_AGENT, this.config.getUserAgent());
 
 		if (headers != null) {

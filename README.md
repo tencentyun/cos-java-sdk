@@ -2,7 +2,7 @@
 
 java sdk for [腾讯云对象存储服务](https://www.qcloud.com/product/cos.html)
 
-sdk说明请参照[cos java sdk文档](https://www.qcloud.com/doc/product/227/3387)
+sdk说明请参照[cos java sdk文档](https://www.qcloud.com/doc/product/430/5944)
 
 
 ## maven坐标
